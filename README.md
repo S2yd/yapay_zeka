@@ -80,6 +80,9 @@ streamlit run streamlit_app.py
 - Google API icin “Distance Matrix API” (Legacy) veya uygun yeni Routes hizmetini etkinlestirmeniz gerekebilir.
 - `index.html` dosyasi, onceki Leaflet denemesidir; Streamlit uygulamasi icin gerekli degildir.
 
+## Ekran Goruntusu
+![Streamlit Arayuz](assets/streamlit_screenshot.png)
+
 ## GitHub'a Yukleme
 ```bash
 git init
