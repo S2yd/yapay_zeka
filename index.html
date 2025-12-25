@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toplanma Alanları Haritası</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #0f172a 0%, #111827 45%, #0b1627 100%);
+      --panel: rgba(255, 255, 255, 0.08);
+      --accent: #7dd3fc;
+      --accent-2: #c084fc;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Sora', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    #app {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: 100vh;
+    }
+    @media (max-width: 900px) {
+      #app { grid-template-columns: 1fr; }
+      #map { height: 55vh; }
+    }
+    .panel {
+      padding: 22px 22px 18px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    h1 {
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      font-size: 22px;
+    }
+    .lead {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.18s ease;
+    }
+    button.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1222;
+      border: none;
+      box-shadow: 0 10px 35px rgba(125, 211, 252, 0.25);
+    }
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    button:not(:disabled):hover { transform: translateY(-1px); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .stat {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .stat strong { display: block; margin-top: 6px; font-size: 20px; }
+    .route-list {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      max-height: 320px;
+      overflow: auto;
+    }
+    .route-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+    .route-item:last-child { margin-bottom: 0; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 20px;
+      background: rgba(125, 211, 252, 0.14);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .tag span {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1222;
+      text-align: center;
+      line-height: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .note {
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+    #map { width: 100%; height: 100vh; min-height: 360px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside class="panel">
+      <div>
+        <h1>Toplanma Alanları Haritası</h1>
+        <p class="lead">OpenStreetMap (Leaflet) üzerinde konumları ve en kısa rotayı görüntüleyin.</p>
+      </div>
+      <div class="controls">
+        <button id="bestRouteBtn" class="primary">En Kısa Rotayı Hesapla</button>
+        <button id="defaultRouteBtn">Sırayla Bağla</button>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <span>Toplam Mesafe</span>
+          <strong id="totalDistance">-</strong>
+        </div>
+        <div class="stat">
+          <span>Durak Sayısı</span>
+          <strong id="stopCount">-</strong>
+        </div>
+      </div>
+      <div class="route-list" id="routeList"></div>
+      <p class="note">API anahtarı gerekmez. Yalnızca internet bağlantısı (OSM/Leaflet CDN) gerekiyor.</p>
+    </aside>
+    <div id="map"></div>
+  </div>
+
+  <script>
+    const places = [
+    { id: 0, name: 'Özkanlar', lat: 37.7710, lng: 30.5515 },
+    { id: 1, name: 'Atatürk Parkı', lat: 37.7665, lng: 30.5560 },
+    { id: 2, name: 'ISBAŞ', lat: 37.7775, lng: 30.5562 },
+    { id: 3, name: 'Kültür Merkezi', lat: 37.7678, lng: 30.5510 },
+    { id: 4, name: 'Devlet Hastanesi', lat: 37.7650, lng: 30.5480 },
+    { id: 5, name: 'Gençlik Spor', lat: 37.7690, lng: 30.5630 },
+    { id: 6, name: 'ITSO', lat: 37.7695, lng: 30.5635 },
+    { id: 7, name: 'Şehir Parkı', lat: 37.7680, lng: 30.5590 },
+    ];
+
+    let map;
+    let markers = [];
+    let routeLine = null;
+
+    const bestRouteBtn = document.getElementById('bestRouteBtn');
+    const defaultRouteBtn = document.getElementById('defaultRouteBtn');
+    const routeList = document.getElementById('routeList');
+    const totalDistanceEl = document.getElementById('totalDistance');
+    const stopCountEl = document.getElementById('stopCount');
+
+    function initMap() {
+      const center = [37.7725, 30.5560];
+      map = L.map('map', { zoomControl: true }).setView(center, 14);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap katkıda bulunanlar'
+      }).addTo(map);
+
+      addMarkers();
+      const initial = defaultOrder();
+      drawRoute(initial);
+      updateRouteList(initial, computeTotalDistance(initial));
+      stopCountEl.textContent = places.length;
+
+      bestRouteBtn.addEventListener('click', handleBestRoute);
+      defaultRouteBtn.addEventListener('click', () => {
+        const order = defaultOrder();
+        drawRoute(order);
+        updateRouteList(order, computeTotalDistance(order));
+      });
+    }
+
+    function addMarkers() {
+      markers.forEach(m => m.remove());
+      markers = places.map((place) => {
+        const marker = L.marker([place.lat, place.lng], { title: place.name }).addTo(map);
+        marker.bindPopup(`<strong>${place.name}</strong><br/>(${place.lat.toFixed(4)}, ${place.lng.toFixed(4)})`);
+        marker.bindTooltip(String(place.id), { permanent: true, direction: 'center', className: 'leaflet-marker-label' });
+        return marker;
+      });
+    }
+
+    function defaultOrder() {
+      return places.map(p => p.id);
+    }
+
+    function latLngOf(index) {
+      const { lat, lng } = places[index];
+      return L.latLng(lat, lng);
+    }
+
+    function legDistanceMeters(aIndex, bIndex) {
+      return latLngOf(aIndex).distanceTo(latLngOf(bIndex));
+    }
+
+    function computeTotalDistance(order) {
+      let total = 0;
+      for (let i = 0; i < order.length; i++) {
+        const from = order[i];
+        const to = order[(i + 1) % order.length];
+        total += legDistanceMeters(from, to);
+      }
+      return total;
+    }
+
+    function drawRoute(order) {
+      if (routeLine) routeLine.remove();
+      const path = order.map(id => latLngOf(id));
+      path.push(latLngOf(order[0])); // dönüş
+      routeLine = L.polyline(path, { color: '#7dd3fc', weight: 4, opacity: 0.9 }).addTo(map);
+      map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+      updateRouteList(order, computeTotalDistance(order));
+    }
+
+    function handleBestRoute() {
+      bestRouteBtn.disabled = true;
+      bestRouteBtn.textContent = 'Hesaplanıyor...';
+      setTimeout(() => {
+        const { bestRoute, bestDistance } = findBestRoute();
+        drawRoute(bestRoute);
+        updateRouteList(bestRoute, bestDistance);
+        bestRouteBtn.disabled = false;
+        bestRouteBtn.textContent = 'En Kısa Rotayı Hesapla';
+      }, 10);
+    }
+
+    // Brute-force TSP: start is fixed at 0, remaining 8! permütasyon taranır (hızlıdır).
+    function findBestRoute() {
+      const others = places.slice(1).map(p => p.id);
+      let bestRoute = [0, ...others];
+      let bestDistance = computeTotalDistance(bestRoute);
+
+      function permute(arr, l) {
+        if (l === arr.length) {
+          const route = [0, ...arr];
+          const dist = computeTotalDistance(route);
+          if (dist < bestDistance) {
+            bestDistance = dist;
+            bestRoute = route.slice();
+          }
+          return;
+        }
+        for (let i = l; i < arr.length; i++) {
+          [arr[l], arr[i]] = [arr[i], arr[l]];
+          permute(arr, l + 1);
+          [arr[l], arr[i]] = [arr[i], arr[l]];
+        }
+      }
+      permute(others, 0);
+      return { bestRoute, bestDistance };
+    }
+
+    function updateRouteList(order, totalMeters) {
+      const km = (totalMeters / 1000).toFixed(2);
+      totalDistanceEl.textContent = `${km} km`;
+      stopCountEl.textContent = order.length;
+      const items = order.map((id, idx) => {
+        const nextId = order[(idx + 1) % order.length];
+        const legKm = (legDistanceMeters(id, nextId) / 1000).toFixed(2);
+        const current = places.find(p => p.id === id);
+        const next = places.find(p => p.id === nextId);
+        return `
+          <div class="route-item">
+            <div class="tag"><span>${id}</span>${current.name}</div>
+            <div style="text-align:right;">
+              <div style="font-size:12px; color:${idx === order.length - 1 ? '#c084fc' : '#9ca3af'};">
+                ${current.name} → ${next.name}
+              </div>
+              <strong>${legKm} km</strong>
+            </div>
+          </div>
+        `;
+      });
+      routeList.innerHTML = items.join('');
+    }
+  </script>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script>
+    window.addEventListener('load', initMap);
+  </script>
+</body>
+</html>
