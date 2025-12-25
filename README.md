@@ -83,14 +83,4 @@ streamlit run streamlit_app.py
 ## Ekran Goruntusu
 ![Streamlit Arayuz](assets/streamlit_screenshot.png)
 
-## GitHub'a Yukleme
-```bash
-git init
-git add .
-git commit -m "ACO rota optimizasyonu"
-git branch -M main
-git remote add origin https://github.com/<kullanici>/<repo>.git
-git push -u origin main
-```
-
 > API anahtarini repo'ya eklemeyin.
