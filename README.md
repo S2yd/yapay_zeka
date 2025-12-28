@@ -5,35 +5,11 @@ bir acil durum dronu icin en uygun rotayi bulmayi amaclar. Rota optimizasyonu **
 ile yapilir. Mesafe matrisi, **Google Distance Matrix API** (varsa) ile surus mesafesi olarak alinir; API yoksa veya
 cagri basarisiz olursa **haversine (kus ucusu)** mesafesi kullanilir.
 
-## Gorevler (Ozet)
+## Ozellikler
 - Toplanma alanlarinin koordinatlari belirlenir.
 - Google Maps API ile surus mesafeleri alinip mesafe matrisi olusturulur.
 - ACO ile en kisa tur bulunur.
 - Streamlit arayuzu ile parametreler ayarlanir, en iyi rota harita uzerinde ve iterasyon grafigiyle gosterilir.
-
-## Dizin Yapisi
-```
-aco_isparta_rotasi/
-├─ main.py                  # Streamlit ana uygulama
-├─ streamlit_app.py         # main.py icin uyumluluk sargisi
-├─ config.py                # Varsayilan parametreler
-├─ requirements.txt         # Kutuphaneler
-├─ .gitignore
-├─ .env                     # (yerel) API anahtari, gitignore
-├─ .env.example             # API anahtari ornek dosya
-├─ data/
-│  └─ coordinates.py        # Toplanma alanlari
-├─ core/
-│  ├─ haversine.py          # Kus ucusu mesafe
-│  ├─ matrix_utils.py       # Mesafe matrisi
-│  └─ ant_algorithm.py      # ACO algoritmasi
-├─ visual/
-│  └─ plotting.py           # Harita ve grafik
-├─ .streamlit/
-│  ├─ secrets.toml           # (opsiyonel) API anahtari, gitignore
-│  └─ secrets.toml.example   # API anahtari ornek dosya
-└─ figure/                  # (opsiyonel) cikti görselleri, gitignore
-```
 
 ## Kurulum
 ```bash
@@ -56,6 +32,8 @@ GOOGLE_MAPS_API_KEY = "YOUR_KEY"
 ```
 
 > `.env` ve `.streamlit/secrets.toml` dosyalari `.gitignore` icindedir.
+> Google Distance Matrix API etkin degilse sistem otomatik olarak haversine mesafesine duser.
+> Google API icin “Distance Matrix API” (Legacy) veya uygun yeni Routes hizmetini etkinlestirmeniz gerekebilir.
 
 ## Calistirma
 ```bash
@@ -75,12 +53,5 @@ streamlit run streamlit_app.py
 - **Buharlasma orani:** Feromon buharlasmasi
 - **Q:** Birakilan feromon miktari
 
-## Notlar
-- Google Distance Matrix API etkin degilse sistem otomatik olarak haversine mesafesine duser.
-- Google API icin “Distance Matrix API” (Legacy) veya uygun yeni Routes hizmetini etkinlestirmeniz gerekebilir.
-- `index.html` dosyasi, onceki Leaflet denemesidir; Streamlit uygulamasi icin gerekli degildir.
-
 ## Ekran Goruntusu
 ![Streamlit Arayuz](assets/streamlit_screenshot.png)
-
-> API anahtarini repo'ya eklemeyin.
